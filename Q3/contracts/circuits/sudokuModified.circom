@@ -36,22 +36,20 @@ template sudoku() {
     //     }
     // }
 
-    component puzzleRangeProofs[9][9];
-    component solutionRangeProofs[9][9];
-    
+    component puzzleProofs[9][9];
+    component solutionProofs[9][9];
     for (var i=0; i<9; i++) {
         for (var j=0; j<9; j++) {
-            puzzleRangeProofs[i][j] = RangeProof(32);
-            solutionRangeProofs[i][j] = RangeProof(32);
-            
-            puzzleRangeProofs[i][j].in <== puzzle[i][j];
-            puzzleRangeProofs[i][j].range[0] <== 0;
-            puzzleRangeProofs[i][j].range[1] <== 9;
+            //init
+            puzzleProofs[i][j] = RangeProof(32);
+            solutionProofs[i][j] = RangeProof(32);
 
-            solutionRangeProofs[i][j].in <== solution[i][j];
-            solutionRangeProofs[i][j].range[0] <== 0;
-            solutionRangeProofs[i][j].range[1] <== 9;
-
+            puzzleProofs[i][j].in <== puzzle[i][j];
+            puzzleProofs[i][j].range[0] <== 0;
+            puzzleProofs[i][j].range[1] <== 9;
+            solutionProofs[i][j].in <== solution[i][j];
+            solutionProofs[i][j].range[0] <== 0;
+            solutionProofs[i][j].range[1] <== 9;
             mul.a[i][j] <== puzzle[i][j];
             mul.b[i][j] <== solution[i][j];
         }
