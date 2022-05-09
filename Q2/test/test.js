@@ -1,7 +1,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const fs = require("fs");
-const { groth16 } = require("snarkjs");
+const { groth16,plonk } = require("snarkjs");
 
 function unstringifyBigInts(o) {
     if ((typeof(o) == "string") && (/^[0-9]+$/.test(o) ))  {
@@ -35,58 +35,120 @@ describe("HelloWorld", function () {
 
     it("Should return true for correct proof", async function () {
         //[assignment] Add comments to explain what each line is doing
+        //proof of 1 * 2
         const { proof, publicSignals } = await groth16.fullProve({"a":"1","b":"2"}, "contracts/circuits/HelloWorld/HelloWorld_js/HelloWorld.wasm","contracts/circuits/HelloWorld/circuit_final.zkey");
 
         console.log('1x2 =',publicSignals[0]);
 
+        //convert results to bigint 
         const editedPublicSignals = unstringifyBigInts(publicSignals);
         const editedProof = unstringifyBigInts(proof);
+        //export params of contract 
         const calldata = await groth16.exportSolidityCallData(editedProof, editedPublicSignals);
-    
+        //format and convert
         const argv = calldata.replace(/["[\]\s]/g, "").split(',').map(x => BigInt(x).toString());
-    
+        //generate input params
         const a = [argv[0], argv[1]];
         const b = [[argv[2], argv[3]], [argv[4], argv[5]]];
         const c = [argv[6], argv[7]];
         const Input = argv.slice(8);
-
+        //get result
         expect(await verifier.verifyProof(a, b, c, Input)).to.be.true;
     });
     it("Should return false for invalid proof", async function () {
+        //generate input params
         let a = [0, 0];
         let b = [[0, 0], [0, 0]];
         let c = [0, 0];
         let d = [0]
+        //get result
         expect(await verifier.verifyProof(a, b, c, d)).to.be.false;
     });
 });
 
 
 describe("Multiplier3 with Groth16", function () {
-
+    let Verifier;
+    let verifier;
     beforeEach(async function () {
         //[assignment] insert your script here
+        Verifier = await ethers.getContractFactory("Multiplier3Verifier");
+        verifier = await Verifier.deploy();
+        await verifier.deployed();
     });
 
     it("Should return true for correct proof", async function () {
         //[assignment] insert your script here
+        // proof of 1 * 2 * 3
+        const { proof, publicSignals } = await groth16.fullProve({"a":"1","b":"2","c":"3"}, "contracts/circuits/Multiplier3/Multiplier3_js/Multiplier3.wasm","contracts/circuits/Multiplier3/circuit_final.zkey");
+
+        console.log('1x2x3 =',publicSignals[0]);
+
+        //convert results to bigint 
+        const editedPublicSignals = unstringifyBigInts(publicSignals);
+        const editedProof = unstringifyBigInts(proof);
+        //export params of contract 
+        const calldata = await groth16.exportSolidityCallData(editedProof, editedPublicSignals);
+        //format and convert
+        const argv = calldata.replace(/["[\]\s]/g, "").split(',').map(x => BigInt(x).toString());
+        //generate input params
+        const a = [argv[0], argv[1]];
+        const b = [[argv[2], argv[3]], [argv[4], argv[5]]];
+        const c = [argv[6], argv[7]];
+        const Input = argv.slice(8);
+        //get result
+        expect(await verifier.verifyProof(a, b, c, Input)).to.be.true;
     });
     it("Should return false for invalid proof", async function () {
         //[assignment] insert your script here
+        //generate input params
+        let a = [0, 0];
+        let b = [[0, 0], [0, 0]];
+        let c = [0, 0];
+        let d = [0]
+        //get result
+        expect(await verifier.verifyProof(a, b, c, d)).to.be.false;
     });
 });
 
 
 describe("Multiplier3 with PLONK", function () {
-
+    let Verifier;
+    let verifier;
     beforeEach(async function () {
         //[assignment] insert your script here
+        Verifier = await ethers.getContractFactory("Multiplier3PlonkVerifier");
+        verifier = await Verifier.deploy();
+        await verifier.deployed();
     });
 
     it("Should return true for correct proof", async function () {
         //[assignment] insert your script here
+        //proof of 1 * 2 * 3
+        const { proof, publicSignals } = await plonk.fullProve({"a":"1","b":"2","c":"3"}, "contracts/circuits/Multiplier3_plonk/Multiplier3_js/Multiplier3.wasm","contracts/circuits/Multiplier3_plonk/circuit_final.zkey");
+
+        console.log('1x2x3 =',publicSignals[0]);
+
+        //convert results to bigint 
+        const editedPublicSignals = unstringifyBigInts(publicSignals);
+        const editedProof = unstringifyBigInts(proof);
+        //export params of contract 
+        const calldata = await plonk.exportSolidityCallData(editedProof, editedPublicSignals);
+        //format
+        const argv = calldata.replace(/["[\]\s]/g, "").split(',')
+
+        //generate params
+        const proofData = argv[0];
+        const pubSignals = [BigInt(argv[1]).toString()];
+        //get result
+        expect(await verifier.verifyProof(proofData, pubSignals)).to.be.true;
     });
     it("Should return false for invalid proof", async function () {
         //[assignment] insert your script here
+        //generate params
+        const proofData = '0x00';
+        const pubSignals = [0];
+        //get result
+        expect(await verifier.verifyProof(proofData, pubSignals)).to.be.false;
     });
 });
